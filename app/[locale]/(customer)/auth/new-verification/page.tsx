@@ -27,6 +27,7 @@ function NewVerificationContent() {
 
     if (typeof window !== 'undefined') {
       try {
+        document.cookie = 'trackup_session=1; path=/; max-age=31536000; SameSite=Lax'
         document.cookie = `trackup_role=${data.role}; path=/; max-age=31536000; SameSite=Lax`
         window.localStorage.setItem('trackup_selected_role', data.role)
       } catch {
@@ -34,7 +35,7 @@ function NewVerificationContent() {
       }
     }
 
-    const destination = data.role === 'venue_owner' ? '/dj' : '/dj'
+    const destination = '/dashboard'
     setTimeout(() => {
       router.push(destination)
     }, 600)

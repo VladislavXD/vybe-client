@@ -20,10 +20,11 @@ export default async function middleware(request: NextRequest) {
     ? `/${segments.slice(1).join('/')}`
     : pathname;
 
-  // 2. Проверяем наличие HttpOnly сессионной куки (Express-session)
+  // 2. Проверяем наличие HttpOnly сессионной куки (Express-session) или маркера авторизации
   const sessionCookie =
     request.cookies.get('session')?.value ||
-    request.cookies.get('connect.sid')?.value;
+    request.cookies.get('connect.sid')?.value ||
+    request.cookies.get('trackup_session')?.value;
   const isAuthenticated = Boolean(sessionCookie && sessionCookie.trim() !== '');
 
   // 3. Проверяем выбранную роль пользователя

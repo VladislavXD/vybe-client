@@ -86,7 +86,15 @@ export function AuthContainer({
   const handleCompleteSuccess = (targetRole?: UserRoleType) => {
     setStage('success')
     const role = targetRole || selectedRole
-    const destination = role === 'venue_owner' ? '/dj' : '/dj'
+    const destination = '/dashboard'
+
+    if (typeof window !== 'undefined') {
+      try {
+        document.cookie = 'trackup_session=1; path=/; max-age=2592000; SameSite=Lax'
+        document.cookie = `trackup_role=${role}; path=/; max-age=2592000; SameSite=Lax`
+        window.localStorage.setItem('trackup_selected_role', role)
+      } catch {}
+    }
 
     if (onSuccess) {
       setTimeout(onSuccess, 800)
@@ -100,11 +108,13 @@ export function AuthContainer({
   // 1. Вход по Email + паролю
   const handleLogin = async (data: LoginFormData) => {
     setEmail(data.email)
-    await loginMutation.mutateAsync({
+    const response = await loginMutation.mutateAsync({
       email: data.email,
       password: data.password,
     })
-    handleCompleteSuccess()
+    const role: UserRoleType =
+      response.user?.role?.toLowerCase() === 'venue_owner' ? 'venue_owner' : 'dj'
+    handleCompleteSuccess(role)
   }
 
   // 2. Регистрация по Email -> переход на подтверждение почты
@@ -358,7 +368,7 @@ export function AuthContainer({
             <AuthButton
               type="button"
               variant="white"
-              onClick={() => (onSuccess ? onSuccess() : router.push('/dj'))}
+              onClick={() => (onSuccess ? onSuccess() : router.push('/dashboard'))}
               rightIcon={<ArrowRight className="size-4" strokeWidth={2} />}
             >
               {selectedRole === 'venue_owner' ? 'Перейти в кабинет' : 'Открыть эфир DJ'}

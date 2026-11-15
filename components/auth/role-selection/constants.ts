@@ -21,7 +21,7 @@ export const ROLE_OPTIONS: Record<UserRoleType, RoleOption> = {
     shareLabel: 'Доля заведения',
     sharePct: '43%',
     icon: Building2,
-    defaultRedirectPath: '/dj', // или /venue когда будет развернут интерфейс заведения
+    defaultRedirectPath: '/dashboard', // или /venue когда будет развернут интерфейс заведения
     ctaText: 'Продолжить как владелец',
     benefits: [
       {
@@ -51,7 +51,7 @@ export const ROLE_OPTIONS: Record<UserRoleType, RoleOption> = {
     shareLabel: 'Доля диджея',
     sharePct: '42%',
     icon: Disc3,
-    defaultRedirectPath: '/dj',
+    defaultRedirectPath: '/dashboard',
     ctaText: 'Продолжить как диджей',
     benefits: [
       {
