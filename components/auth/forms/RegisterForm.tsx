@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { User, Mail, Lock, Eye, EyeOff, ShieldCheck, ArrowRight } from 'lucide-react'
+import { User, Mail, Lock, Eye, EyeOff, ShieldCheck, ArrowRight, Store } from 'lucide-react'
 import { AuthInput } from '../ui/AuthInput'
 import { AuthButton } from '../ui/AuthButton'
 import type { RegisterFormData, FormErrors } from '../types'
@@ -23,6 +23,7 @@ export function RegisterForm({
     password: '',
     confirmPassword: '',
     acceptTerms: true,
+    venueName: '',
   })
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
@@ -78,7 +79,7 @@ export function RegisterForm({
         label="Имя / Псевдоним"
         type="text"
         autoComplete="name"
-        placeholder="DJ Pulse"
+        placeholder="Владислав"
         value={formData.name}
         onChange={(e) => {
           setFormData((p) => ({ ...p, name: e.target.value }))
@@ -88,6 +89,23 @@ export function RegisterForm({
         leadingIcon={<User className="size-4" />}
         disabled={isLoading}
       />
+
+      {/* Название заведения — опциональное поле */}
+      <div className="flex flex-col gap-1">
+        <AuthInput
+          label="Название заведения"
+          type="text"
+          autoComplete="organization"
+          placeholder="Brodway Bar (можно заполнить позже)"
+          value={formData.venueName ?? ''}
+          onChange={(e) => setFormData((p) => ({ ...p, venueName: e.target.value }))}
+          leadingIcon={<Store className="size-4" />}
+          disabled={isLoading}
+        />
+        <p className="text-[11px] text-white/25 pl-1 leading-tight">
+          Заведение создаётся автоматически. Название можно изменить в настройках.
+        </p>
+      </div>
 
       <AuthInput
         label="Электронная почта"

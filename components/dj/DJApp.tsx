@@ -2,11 +2,13 @@
 
 import React, { useState } from 'react'
 import { DJLayout } from './layout/DJLayout'
+import { LogoutConfirmDialog } from './layout/LogoutConfirmDialog'
 import { OrdersList } from './orders/OrdersList'
 import { RejectDrawer } from './orders/RejectDrawer'
 import { NowPlayingScreen } from './screens/NowPlayingScreen'
 import { SettingsScreen } from './screens/SettingsScreen'
 import { TrackQueue } from './player/TrackQueue'
+import { QrManagementView } from '@/components/qrcodes'
 import {
   INITIAL_ORDERS,
   INITIAL_NOW_PLAYING,
@@ -23,19 +25,23 @@ import type {
 
 interface DJAppProps {
   venueName?: string
+  initialTab?: DJTab
 }
 
 /**
- * Корневой компонент DJ-приложения.
- * Владеет всем состоянием; рендерит нужный экран внутри адаптивного layout.
+ * Единый дашборд TrackUp.
+ * Владеет всем состоянием; рендерит нужный экран внутри единого адаптивного DJLayout.
  *
- * Mobile  (< lg): вкладки — Заказы / Эфир / Очередь / Настройки
- * Desktop (≥ lg): боковой nav + двухколоночный content
+ * Mobile  (< lg): вкладки — Заказы / Эфир / Очередь / QR-коды / Настройки
+ * Desktop (≥ lg): боковой nav + адаптивный контент под активную вкладку
  *
  * @see DJLayout — responsive shell
  */
-export function DJApp({ venueName = 'Neon Harbor Club' }: DJAppProps) {
-  const [activeTab, setActiveTab] = useState<DJTab>('orders')
+export function DJApp({
+  venueName = 'Neon Harbor Club',
+  initialTab = 'orders',
+}: DJAppProps) {
+  const [activeTab, setActiveTab] = useState<DJTab>(initialTab)
 
   const [orders, setOrders] = useState<DJOrder[]>(INITIAL_ORDERS)
   const [nowPlaying, setNowPlaying] = useState<NowPlayingTrack | null>(INITIAL_NOW_PLAYING)
@@ -43,6 +49,7 @@ export function DJApp({ venueName = 'Neon Harbor Club' }: DJAppProps) {
   const [stats, setStats] = useState<DJShiftStats>(INITIAL_STATS)
   const [isAcceptingOrders, setIsAcceptingOrders] = useState(true)
   const [rejectingOrder, setRejectingOrder] = useState<DJOrder | null>(null)
+  const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false)
 
   // ─── Order handlers ──────────────────────────────────────────────────────────
 
@@ -182,8 +189,11 @@ export function DJApp({ venueName = 'Neon Harbor Club' }: DJAppProps) {
       isAcceptingOrders={isAcceptingOrders}
       onToggleAccepting={() => setIsAcceptingOrders((v) => !v)}
       venueName={venueName}
+      onLogout={() => setIsLogoutDialogOpen(true)}
     />
   )
+
+  const qrcodesScreen = <QrManagementView />
 
   // ─── Render ─────────────────────────────────────────────────────────────────
 
@@ -195,10 +205,11 @@ export function DJApp({ venueName = 'Neon Harbor Club' }: DJAppProps) {
       isPlaying={Boolean(nowPlaying)}
       isLive={isAcceptingOrders}
       venueName={venueName}
+      onLogout={() => setIsLogoutDialogOpen(true)}
     >
       {/*
        * MOBILE (< lg): одна вкладка за раз, анимация fade+slide в DJLayout
-       * DESKTOP (≥ lg): левая колонка (orders) + правая (playing/queue) всегда видны
+       * DESKTOP (≥ lg): переключение вкладок, на orders — двухколоночный пульт
        */}
 
       {/* ── Mobile: single-tab content ──────────────────────────────────── */}
@@ -206,21 +217,42 @@ export function DJApp({ venueName = 'Neon Harbor Club' }: DJAppProps) {
         {activeTab === 'orders' && ordersScreen}
         {activeTab === 'playing' && nowPlayingScreen}
         {activeTab === 'queue' && queueScreen}
+        {activeTab === 'qrcodes' && qrcodesScreen}
         {activeTab === 'settings' && settingsScreen}
       </div>
 
-      {/* ── Desktop: two-column layout ──────────────────────────────────── */}
-      <div className="hidden lg:flex gap-5 items-start min-h-full">
-        {/* Left: orders (always) */}
-        <div className="flex-1 min-w-0">
-          {ordersScreen}
-        </div>
+      {/* ── Desktop: dynamic layout based on active tab ─────────────────── */}
+      <div className="hidden lg:flex gap-5 items-start min-h-full w-full">
+        {activeTab === 'qrcodes' ? (
+          <div className="w-full min-h-full">
+            {qrcodesScreen}
+          </div>
+        ) : activeTab === 'playing' ? (
+          <div className="w-full max-w-2xl mx-auto">
+            {nowPlayingScreen}
+          </div>
+        ) : activeTab === 'queue' ? (
+          <div className="w-full max-w-3xl mx-auto">
+            {queueScreen}
+          </div>
+        ) : activeTab === 'settings' ? (
+          <div className="w-full max-w-2xl mx-auto">
+            {settingsScreen}
+          </div>
+        ) : (
+          <>
+            {/* Left: orders (workstation) */}
+            <div className="flex-1 min-w-0">
+              {ordersScreen}
+            </div>
 
-        {/* Right: now playing + queue (always) */}
-        <div className="w-[300px] xl:w-[320px] shrink-0 flex flex-col gap-4">
-          {nowPlayingScreen}
-          {settingsScreen}
-        </div>
+            {/* Right: now playing + settings */}
+            <div className="w-[300px] xl:w-[320px] shrink-0 flex flex-col gap-4">
+              {nowPlayingScreen}
+              {settingsScreen}
+            </div>
+          </>
+        )}
       </div>
 
       {/* Reject drawer */}
@@ -229,6 +261,12 @@ export function DJApp({ venueName = 'Neon Harbor Club' }: DJAppProps) {
         open={Boolean(rejectingOrder)}
         onOpenChange={(open) => !open && setRejectingOrder(null)}
         onConfirm={handleConfirmReject}
+      />
+
+      {/* Logout confirmation dialog */}
+      <LogoutConfirmDialog
+        open={isLogoutDialogOpen}
+        onOpenChange={setIsLogoutDialogOpen}
       />
     </DJLayout>
   )

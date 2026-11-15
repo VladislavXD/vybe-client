@@ -79,6 +79,7 @@ export function VerificationForm({
             stroke="currentColor"
             strokeWidth={1.5}
           >
+
             <path
               strokeLinecap="round"
               strokeLinejoin="round"

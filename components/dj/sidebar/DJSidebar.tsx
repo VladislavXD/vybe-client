@@ -19,6 +19,7 @@ interface DJSidebarProps {
   onSelectTab: (tab: DJSidebarTab) => void
   pendingOrdersCount?: number
   className?: string
+  onLogout?: () => void
 }
 
 /**
@@ -33,6 +34,7 @@ export function DJSidebar({
   onSelectTab,
   pendingOrdersCount = 0,
   className,
+  onLogout,
 }: DJSidebarProps) {
   const [currentTime, setCurrentTime] = useState<string>('23:42')
 
@@ -117,9 +119,10 @@ export function DJSidebar({
         {/* Кнопка выхода */}
         <button
           type="button"
+          onClick={onLogout}
           title="Выйти из студии"
           aria-label="Выйти"
-          className="flex size-11 sm:size-12 items-center justify-center rounded-2xl text-muted-foreground/70 hover:text-foreground hover:bg-white/[0.04] transition-colors cursor-pointer"
+          className="flex size-11 sm:size-12 items-center justify-center rounded-2xl text-muted-foreground/70 hover:text-rose-400 hover:bg-white/[0.04] transition-colors cursor-pointer"
         >
           <LogOut className="size-5 stroke-[2]" />
         </button>

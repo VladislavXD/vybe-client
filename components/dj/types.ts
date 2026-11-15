@@ -79,4 +79,4 @@ export interface DJShiftStats {
 }
 
 /** Вкладки навигации (одинаковы для мобильного tab bar и десктопного sidebar) */
-export type DJTab = 'orders' | 'playing' | 'queue' | 'settings'
+export type DJTab = 'orders' | 'playing' | 'queue' | 'qrcodes' | 'settings'

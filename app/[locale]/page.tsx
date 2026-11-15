@@ -1,19 +1,48 @@
-import { Button } from "@/components/ui/button";
-import Image from "next/image";
+import { Suspense } from 'react'
+import { cookies } from 'next/headers'
+import { redirect } from 'next/navigation'
 
-
-export function generateStaticParams(){ 
-  return [
-    {locale: 'ru'},
-    {locale: 'en'}
-  ]
+export function generateStaticParams() {
+  return [{ locale: 'ru' }, { locale: 'en' }]
 }
 
+async function HomeRedirect({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}) {
+  const { locale } = await params
+  const cookieStore = await cookies()
 
-export default function Home() {
+  const session =
+    cookieStore.get('session')?.value || cookieStore.get('connect.sid')?.value
+  const role = cookieStore.get('trackup_role')?.value
+
+  if (!session) {
+    redirect(`/${locale}/auth`)
+  }
+
+  if (!role) {
+    redirect(`/${locale}/auth?stage=role-selection`)
+  }
+
+  const destination = role === 'venue_owner' ? '/dj' : '/dj'
+  redirect(`/${locale}${destination}`)
+  return null
+}
+
+/**
+ * Корневая страница локали (/[locale]).
+ * Выполняет серверную проверку сессии и роли пользователя в Suspense boundary.
+ */
+export default function HomePage({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}) {
   return (
-   <>
-
-   </>
-  );
+    <Suspense fallback={null}>
+      <HomeRedirect params={params} />
+    </Suspense>
+  )
 }

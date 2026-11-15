@@ -28,10 +28,19 @@ export { EqualizerBars } from './ui/EqualizerBars'
 export { ShimmerButton } from './ui/ShimmerButton'
 export { OrderReceiptCard } from './ui/OrderReceiptCard'
 export { ManualTrackDrawer } from './ui/ManualTrackDrawer'
+export { GuestTabBar, type GuestTabKey, type GuestTabBarProps } from './ui/GuestTabBar'
+
+// Hero Visuals
+export { FoodHeroVisual } from './visuals/FoodHeroVisual'
+export { ReviewHeroVisual } from './visuals/ReviewHeroVisual'
 
 // Screen Components
 export { GuestInitialScreen } from './screens/GuestInitialScreen'
 export { GuestMusicScreen } from './screens/GuestMusicScreen'
+export { GuestFoodInitialScreen } from './screens/GuestFoodInitialScreen'
+export { GuestMenuScreen } from './screens/GuestMenuScreen'
+export { GuestReviewInitialScreen } from './screens/GuestReviewInitialScreen'
+export { GuestReviewScreen } from './screens/GuestReviewScreen'
+export { GuestCheckoutScreen } from './screens/GuestCheckoutScreen'
 export { GuestSuccessScreen } from './screens/GuestSuccessScreen'
 export { GuestFailureScreen } from './screens/GuestFailureScreen'
-

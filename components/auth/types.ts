@@ -1,10 +1,20 @@
+import type { UserRoleType, RoleSelectionData } from './role-selection/types'
+
+export type { UserRoleType, RoleSelectionData }
+
 export type AuthMode = 'login' | 'register'
 
 export type AuthMethod = 'email' | 'phone'
 
 export type SocialProvider = 'google' | 'yandex' | 'telegram'
 
-export type AuthStage = 'credentials' | 'phone-otp' | 'email-verification' | 'forgot-password' | 'success'
+export type AuthStage =
+  | 'credentials'
+  | 'phone-otp'
+  | 'email-verification'
+  | 'role-selection'
+  | 'forgot-password'
+  | 'success'
 
 export interface LoginFormData {
   email: string
@@ -18,6 +28,7 @@ export interface RegisterFormData {
   password: string
   confirmPassword: string
   acceptTerms: boolean
+  venueName?: string
 }
 
 export interface PhoneFormData {

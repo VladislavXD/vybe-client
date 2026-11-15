@@ -15,6 +15,7 @@ interface DJLayoutProps {
   isPlaying?: boolean
   isLive?: boolean
   venueName?: string
+  onLogout?: () => void
   children: React.ReactNode
 }
 
@@ -33,9 +34,18 @@ export function DJLayout({
   isPlaying = false,
   isLive = true,
   venueName,
+  onLogout,
   children,
 }: DJLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
+
+  const tabTitles: Record<DJTab, string> = {
+    orders: 'Заказы (Live)',
+    playing: 'Сейчас играет',
+    queue: 'Очередь',
+    qrcodes: 'QR-коды и столы',
+    settings: 'Настройки',
+  }
 
   return (
     <div
@@ -55,13 +65,14 @@ export function DJLayout({
           pendingCount={pendingCount}
           isPlaying={isPlaying}
           onClose={() => setIsSidebarOpen(false)}
+          onLogout={onLogout}
         />
       </div>
 
       {/* Main area */}
       <div className="flex flex-1 flex-col overflow-hidden min-w-0">
         <DJTopBar
-          title="DJ Panel"
+          title={tabTitles[activeTab] || 'TrackUp'}
           subtitle={venueName}
           isLive={isLive}
           isSidebarOpen={isSidebarOpen}

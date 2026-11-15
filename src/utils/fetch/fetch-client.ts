@@ -93,11 +93,19 @@ export class FetchClient {
     const response: Response = await fetch(url, config);
 
     if (!response.ok) {
-      const error = (await response.json()) as { message: string } | undefined;
+      let errorMessage = response.statusText;
+      try {
+        const error = (await response.json()) as { message?: string | string[] } | undefined;
+        if (error?.message) {
+          errorMessage = Array.isArray(error.message) ? error.message.join(', ') : error.message;
+        }
+      } catch {
+        // игнорируем ошибку парсинга JSON
+      }
 
       throw new FetchError(
         response.status,
-        error?.message || response.statusText,
+        errorMessage || 'Произошла непредвиденная ошибка',
       );
     }
 

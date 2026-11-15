@@ -1,38 +1,207 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# TrackUp Web Client 🎵🎧
 
-## Getting Started
+Клиентское веб-приложение сервиса **TrackUp** — цифрового посредника для интерактивного заказа музыки у DJ в заведениях (клубах, барах, ресторанах) через QR-коды на столах.
 
-First, run the development server:
+Гость заведения сканирует QR-код, находит желаемый трек и оплачивает заказ (Payme / Click с 180-секундным холдом). DJ в режиме реального времени принимает или отклоняет трек, после чего воспроизводит его в своём собственном диджейском софте или оборудовании.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+---
+
+## 🚀 Ключевые возможности
+
+- **📱 Мультисервисный гостевой портал (`/g/[id]`)**:
+  - **Единый хаб стола**: после сканирования QR или касания NFC гость попадает на интерактивный экран стола с выбором доступных услуг заведения.
+  - **🎵 Музыка & DJ**: поиск и заказ треков у диджея с 180-секундным холдом и списанием при принятии.
+  - **🍽️ Онлайн-меню (Еда и напитки)**: цифровой каталог блюд, корзина, мгновенная отправка заказа на кухню и в бар.
+  - **⭐ Отзывы и чаевые (NFC / QR)**: 5-звёздочная оценка, теги впечатлений, комментарии для управляющего и безналичные чаевые персоналу.
+  - **🛎️ Вызов персонала**: мгновенное уведомление официанту с номером стола.
+
+- **🎧 Панель управления DJ (`/dj`)**:
+  - Интерактивная живая лента заказов во время активной смены (`DjShift`).
+  - Таймер быстрого реагирования (180 секунд) на принятие (`ACCEPTED`) или отказ (`REJECTED`).
+  - Управление сменой, аналитика заработка (доля DJ — **42%**).
+
+- **🏢 Кабинет владельца заведения**:
+  - Единое управление столами, QR-кодами и NFC-метками.
+  - Модули онлайн-меню кухни/бара, музыкального эфира и отзывов гостей.
+  - Подключение резидентов и приглашённых диджеев по коду/ссылке.
+  - Прозрачный расчёт долей (доля заведения — **43%**, платформа — **15%** / **0% в пилоте**).
+
+- **🔐 3-этапный безопасный онбординг (`/auth`)**:
+  - **Этап 1 (Учётные данные)**: Вход / Регистрация по Email + паролю или по номеру телефона (SMS OTP через Eskiz.uz).
+  - **Этап 2 (Верификация)**:
+    - **Email**: отправка защищённой ссылки подтверждения (`EmailLinkNoticeView`) с переходом в веб-клиент почты (Gmail, Yandex, Mail.ru, Outlook).
+    - **Телефон**: ввод 6-значного SMS OTP-кода (`OtpCodeView`).
+    - **Обработка ссылки**: страница `/auth/new-verification?token=...` (`TokenVerificationView`).
+  - **Этап 3 (Выбор роли)**: Выбор между «Владелец заведения» и «Диджей (DJ)» с возможностью ввода инвайт-кода от клуба.
+  - **Успешный старт**: Автоматическая маршрутизация в соответствующее рабочее пространство.
+
+- **🛡 Умная изоляция в Middleware (`middleware.ts`)**:
+  - Защита страниц авторизации: авторизованные пользователи изолированы от страницы `/auth` и автоматически перенаправляются в рабочий дашборд.
+  - Проверка завершения онбординга: если авторизованный пользователь еще не выбрал роль, он направляется на `/auth?stage=role-selection`.
+  - Открытый доступ для гостей по QR-кодам (`/g/*`) и для обработки ссылки подтверждения (`/auth/new-verification`).
+
+---
+
+## 🧱 Архитектура и декомпозиция онбординга
+
+Модуль авторизации и выбора роли выстроен по принципам высокой связности и низкой зацепленности (High Cohesion, Low Coupling), без монолитных файлов:
+
+```
+client/components/auth/
+├── AuthContainer.tsx               # Главный контейнер-оркестратор этапов авторизации
+├── types.ts                        # Общие TypeScript-интерфейсы и состояния этапов
+├── index.ts                        # Публичный Barrel-экспорт
+├── layout/
+│   └── AuthLayoutWrapper.tsx       # Изолированный лейаут с фоновым свечением и текстурой
+├── forms/
+│   ├── LoginForm.tsx               # Форма входа по Email
+│   ├── RegisterForm.tsx            # Форма регистрации по Email
+│   ├── PhoneForm.tsx               # Ввод номера телефона для SMS OTP
+│   ├── VerificationForm.tsx        # Универсальная обёртка верификации
+│   ├── PhoneVerificationForm.tsx   # Ввод 6-значного кода SMS OTP
+│   ├── ForgotPasswordForm.tsx      # Форма запроса восстановления пароля
+│   ├── AuthSegmentedControl.tsx    # Переключатель: Вход / Регистрация
+│   └── AuthMethodSwitcher.tsx      # Переключатель: Email / Телефон
+├── verification/                   # ⭐️ Переиспользуемый модуль верификаций
+│   ├── types.ts                    # Типы верификации (EmailLinkNotice, OtpCode, TokenVerification)
+│   ├── VerificationStatusCard.tsx  # Карточка статуса со свечением и бейджами
+│   ├── EmailLinkNoticeView.tsx     # Экран отправки ссылки на почту с быстрым переходом в веб-почту
+│   ├── OtpCodeView.tsx             # Экран ввода 6-значного OTP-кода с таймером
+│   ├── TokenVerificationView.tsx   # Обработка токена из ссылки подтверждения
+│   └── index.ts                    # Barrel-экспорт модуля верификации
+├── role-selection/                 # ⭐️ ЭТАП 3: Декомпозированный модуль выбора роли
+│   ├── types.ts                    # Типы ролей (UserRoleType, RoleOption, RoleBenefit)
+│   ├── constants.ts                # Описание ролей, процентов долей (43%/42%) и преимуществ
+│   ├── useRoleSelection.ts         # Кастомный хук состояния, валидации, куки и кэша
+│   ├── RoleStepHeader.tsx          # Индикатор прогресса (Шаг 3 из 3) и заголовок
+│   ├── RoleCard.tsx                # Интерактивная карточка роли с радио-выбором
+│   ├── RoleFeatureList.tsx         # Список ключевых возможностей выбранной роли
+│   ├── RoleInviteInput.tsx         # Опциональный ввод инвайт-кода клуба для DJ
+│   ├── RoleSelectionForm.tsx       # Сборный компонент третьего шага
+│   └── index.ts                    # Barrel-экспорт модуля выбора роли
+└── ui/
+    ├── AuthButton.tsx              # Кнопки с состояниями загрузки и акцентной подсветкой
+    ├── AuthInput.tsx               # Поля ввода с иконками и валидацией
+    ├── AuthDivider.tsx             # Разделитель форм
+    ├── SocialAuthButtons.tsx       # Кнопки OAuth (Google, Яндекс, Telegram)
+    └── VerificationCodeInput.tsx   # Сегментированный ввод OTP-кода
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🎧 Мультисервисный гостевой портал (`/g/[id]`)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Гостевая зона спроектирована под мгновенный доступ без регистрации по QR-коду на столе или NFC-метке с автоопределением сервиса по параметру `?type=`:
 
-## Learn More
+```
+client/components/guest/
+├── visuals/                        # Стилизованные визуалы главных экранов
+│   ├── FoodHeroVisual.tsx          # Анимированное ресторанное блюдо с паром и парящими бейджами
+│   └── ReviewHeroVisual.tsx        # Золотой медальон рейтинга 5★ со сверкающими искрами
+├── gramophone/                     # Визуализация винилового проигрывателя
+│   ├── GramophoneDisc.tsx          # Вращающаяся пластинка с канавками
+│   ├── Tonearm.tsx                 # Анимированный тонарм
+│   ├── VinylPulseRing.tsx          # Пульсирующие световые волны
+│   └── GramophonePlayer.tsx        # Сборный плеер с чипами треков
+├── screens/                        # Главные экраны и каталоги сервисов
+│   ├── GuestInitialScreen.tsx      # Главная DJ музыки (Грамофон)
+│   ├── GuestMusicScreen.tsx        # Каталог и поиск треков
+│   ├── GuestFoodInitialScreen.tsx  # Главная еды и бара (?type=food)
+│   ├── GuestMenuScreen.tsx         # Цифровое меню с корзиной к столику
+│   ├── GuestReviewInitialScreen.tsx# Главная отзывов и чаевых (?type=review)
+│   ├── GuestReviewScreen.tsx       # Форма отзыва 5★ и выбор чаевых
+│   ├── GuestCheckoutScreen.tsx     # ⭐️ Оформление заказа и выбор оплаты (Payme, Click, Uzum, Карты, Apple/Google Pay)
+│   ├── GuestSuccessScreen.tsx      # ⭐️ Динамический экран успеха под музыку, еду и отзывы
+│   └── GuestFailureScreen.tsx      # ⭐️ Динамический экран отказа/ошибки под музыку, еду и отзывы
+└── ui/
+    ├── OrderReceiptCard.tsx        # ⭐️ Единый динамический чек под все типы заказа без троекратного дублирования
+    ├── GuestTabBar.tsx             # Нижний таб-бар переключения сервисов (Музыка, Меню, Отзывы)
+    ├── ShimmerButton.tsx           # Кнопка со скользящим бликом (белая/акцент)
+    └── ManualTrackDrawer.tsx       # Дровер ручного ввода трека
+```
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🛠 Технологический стек
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Категория | Технологии |
+|---|---|
+| **Фреймворк** | [Next.js 16](https://nextjs.org/) (App Router, Turbopack, Partial Prerendering) |
+| **Библиотека UI** | [React 19](https://react.dev/), [@base-ui/react](https://base-ui.com/) |
+| **Стилизация** | [Tailwind CSS v4](https://tailwindcss.com/), `@wrksz/themes` |
+| **Управление состоянием** | [@tanstack/react-query v5](https://tanstack.com/query) |
+| **Интернационализация** | [next-intl](https://next-intl-docs.vercel.app/) (RU / EN) |
+| **Иконки** | [lucide-react](https://lucide.dev/) |
+| **Безопасность сессий** | HttpOnly Session Cookies (`session`), куки ролей (`trackup_role`) |
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 📐 Структура маршрутов (App Router)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+client/app/
+├── [locale]/
+│   ├── (customer)/
+│   │   ├── auth/
+│   │   │   ├── page.tsx            # Страница входа, регистрации и выбора роли
+│   │   │   └── new-verification/   # Обработка ссылки подтверждения Email из письма
+│   │   │       └── page.tsx        # Верификация токена и немедленный переход к выбору роли
+│   │   └── dj/page.tsx             # Панель управления заказами диджея
+│   ├── (guest)/
+│   │   ├── g/[id]/
+│   │   │   ├── page.tsx            # Главный гостевой экран стола с QR-маршрутизацией (?type=food|review|music)
+│   │   │   ├── menu/page.tsx       # Прямой маршрут меню еды и бара столика (/g/[id]/menu)
+│   │   │   └── review/page.tsx     # Прямой маршрут отзывов и чаевых столика (/g/[id]/review)
+│   ├── layout.tsx                  # Локализованный корневой лейаут
+│   └── page.tsx                    # Проверка сессии и роли: перенаправление на /auth или /dj
+├── globals.css                     # Глобальные стили и Tailwind-директивы
+└── layout.tsx                      # Базовый HTML-контейнер
+```
 
+---
 
+## ⚙️ Запуск и разработка
+
+### 1. Установка зависимостей
+```bash
+cd client
+yarn install
+# или
+npm install
+```
+
+### 2. Переменные окружения (`.env.local`)
+Создайте файл `.env.local` в папке `client`:
+```env
+NEXT_PUBLIC_API_URL=http://localhost:5000/api
+NEXT_PUBLIC_SOCKET_URL=http://localhost:5000
+```
+
+### 3. Запуск dev-сервера
+```bash
+yarn dev
+# или
+npm run dev
+```
+Приложение доступно по адресу [http://localhost:3000](http://localhost:3000).
+
+### 4. Продакшен сборка
+```bash
+yarn build
+yarn start
+```
+
+### 5. Проверка типов и линтинг
+```bash
+npm run lint
+```
+
+---
+
+## 🎨 Дизайн-система
+
+- **Цветовая палитра**:
+  - Фоны: Глубокий тёмный `#0C0B0F` с полупрозрачным стеклом (`glassmorphism`).
+  - Акцент: Благородное шампанское `#EBC6A0` для фокуса, кнопок и статусов.
+  - Успех: Изумрудный `#34D399` / Предупреждение: Янтарный `#FBBF24` / Ошибка: Розовый `#FB7185`.
+- **Эргономика**: Увеличенные интерактивные зоны для удобной работы в тёмном зале клуба со смартфона или планшета.

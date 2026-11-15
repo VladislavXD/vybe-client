@@ -24,12 +24,14 @@ function formatTime(seconds: number): string {
  * Живой прогресс, жёлтый акцент, тёмный фон.
  */
 export function NowPlayingPlayer({ track, className }: NowPlayingPlayerProps) {
+  const [prevTrackId, setPrevTrackId] = useState(track?.id)
   const [currentSeconds, setCurrentSeconds] = useState(track?.currentSeconds ?? 0)
   const [isAudioMuted, setIsAudioMuted] = useState(false)
 
-  useEffect(() => {
+  if (track?.id !== prevTrackId) {
+    setPrevTrackId(track?.id)
     setCurrentSeconds(track?.currentSeconds ?? 0)
-  }, [track?.id])
+  }
 
   // Simulate playback progress
   useEffect(() => {

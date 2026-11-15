@@ -8,7 +8,6 @@ import { DJ_COLORS } from '../constants'
 import { formatCurrency } from '@/src/utils/formatCurrency'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Progress } from '@/components/ui/progress'
 
 interface NowPlayingCardProps {
   track: NowPlayingTrack | null
@@ -27,13 +26,14 @@ function formatTime(s: number) {
  * Живой прогресс, жёлтый accent.
  */
 export function NowPlayingCard({ track, className }: NowPlayingCardProps) {
+  const [prevTrackId, setPrevTrackId] = useState(track?.id)
   const [currentSecs, setCurrentSecs] = useState(track?.currentSeconds ?? 0)
   const [muted, setMuted] = useState(false)
 
-  // Reset when track changes
-  useEffect(() => {
+  if (track?.id !== prevTrackId) {
+    setPrevTrackId(track?.id)
     setCurrentSecs(track?.currentSeconds ?? 0)
-  }, [track?.id])
+  }
 
   // Playback simulation
   useEffect(() => {

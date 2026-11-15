@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+import { LogOut } from 'lucide-react'
 import { ThemeToggle } from '../../ui/ThemeToggle'
 import type { DJShiftStats } from '../types'
 import { DJ_COLORS } from '../constants'
@@ -13,6 +14,7 @@ interface SettingsScreenProps {
   isAcceptingOrders: boolean
   onToggleAccepting: () => void
   venueName?: string
+  onLogout?: () => void
 }
 
 interface SettingsRowProps {
@@ -81,6 +83,7 @@ export function SettingsScreen({
   isAcceptingOrders,
   onToggleAccepting,
   venueName,
+  onLogout,
 }: SettingsScreenProps) {
   return (
     <div className="flex flex-col gap-6">
@@ -144,6 +147,22 @@ export function SettingsScreen({
               {venueName}
             </span>
           </SettingsRow>
+        </SettingsSection>
+      )}
+
+      {/* Account / Logout */}
+      {onLogout && (
+        <SettingsSection title="Аккаунт">
+          <div className="p-3">
+            <button
+              type="button"
+              onClick={onLogout}
+              className="w-full flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl text-[13px] font-semibold text-rose-400 bg-rose-500/10 hover:bg-rose-500/15 border border-rose-500/20 active:scale-[0.99] transition-all cursor-pointer"
+            >
+              <LogOut className="size-4 stroke-[2]" />
+              <span>Выйти из студии</span>
+            </button>
+          </div>
         </SettingsSection>
       )}
     </div>

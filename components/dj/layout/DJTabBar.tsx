@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { ListMusic, Disc3, AlignJustify, Settings } from 'lucide-react'
+import { ListMusic, Disc3, AlignJustify, Settings, QrCode } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { DJTab } from '../types'
 import { DJ_COLORS } from '../constants'
@@ -17,6 +17,7 @@ const TABS: { id: DJTab; label: string; Icon: React.ElementType }[] = [
   { id: 'orders', label: 'Заказы', Icon: ListMusic },
   { id: 'playing', label: 'Эфир', Icon: Disc3 },
   { id: 'queue', label: 'Очередь', Icon: AlignJustify },
+  { id: 'qrcodes', label: 'QR-коды', Icon: QrCode },
   { id: 'settings', label: 'Ещё', Icon: Settings },
 ]
 
