@@ -30,26 +30,6 @@ export function useCurrentUser() {
   });
 }
 
-// Хелперы для синхронизации куки авторизации на клиенте
-function setAuthCookies(user?: User | null) {
-  if (typeof window === 'undefined') return;
-  document.cookie = 'trackup_session=1; path=/; max-age=2592000; SameSite=Lax';
-  const role = user?.role?.toLowerCase() === 'venue_owner' ? 'venue_owner' : 'dj';
-  document.cookie = `trackup_role=${role}; path=/; max-age=2592000; SameSite=Lax`;
-  try {
-    window.localStorage.setItem('trackup_selected_role', role);
-  } catch {}
-}
-
-function clearAuthCookies() {
-  if (typeof window === 'undefined') return;
-  document.cookie = 'trackup_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
-  document.cookie = 'trackup_role=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
-  try {
-    window.localStorage.removeItem('trackup_selected_role');
-  } catch {}
-}
-
 /**
  * Хук для входа по email и паролю.
  */
@@ -60,7 +40,6 @@ export function useLogin() {
     mutationFn: (data) => authService.login(data),
     onSuccess: (response) => {
       queryClient.setQueryData(AUTH_QUERY_KEY, response.user);
-      setAuthCookies(response.user);
     },
   });
 }
@@ -93,7 +72,6 @@ export function useVerifyPhoneOtp() {
     mutationFn: (data) => authService.verifyPhoneOtp(data),
     onSuccess: (response) => {
       queryClient.setQueryData(AUTH_QUERY_KEY, response.user);
-      setAuthCookies(response.user);
     },
   });
 }
@@ -108,7 +86,6 @@ export function useConfirmEmail() {
     mutationFn: (data) => authService.confirmEmail(data),
     onSuccess: (response) => {
       queryClient.setQueryData(AUTH_QUERY_KEY, response.user);
-      setAuthCookies(response.user);
     },
   });
 }
@@ -131,9 +108,13 @@ export function useLogout() {
   return useMutation<void, FetchError, void>({
     mutationFn: () => authService.logout(),
     onSuccess: () => {
+      if (typeof window !== 'undefined') {
+        document.cookie = 'trackup_session=; path=/; max-age=0; SameSite=Lax';
+        document.cookie = 'trackup_role=; path=/; max-age=0; SameSite=Lax';
+        window.localStorage.removeItem('trackup_selected_role');
+      }
       queryClient.setQueryData(AUTH_QUERY_KEY, null);
       queryClient.removeQueries({ queryKey: AUTH_QUERY_KEY });
-      clearAuthCookies();
     },
   });
 }

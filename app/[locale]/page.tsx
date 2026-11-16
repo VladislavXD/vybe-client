@@ -17,7 +17,8 @@ async function HomeRedirect({
   const session =
     cookieStore.get('session')?.value ||
     cookieStore.get('connect.sid')?.value ||
-    cookieStore.get('trackup_session')?.value
+    cookieStore.get('trackup_session')?.value ||
+    cookieStore.get('trackup_role')?.value
   const role = cookieStore.get('trackup_role')?.value
 
   if (!session) {
@@ -28,7 +29,7 @@ async function HomeRedirect({
     redirect(`/${locale}/auth?stage=role-selection`)
   }
 
-  const destination = '/dashboard'
+  const destination = role === 'venue_owner' ? '/dashboard' : '/dashboard'
   redirect(`/${locale}${destination}`)
   return null
 }

@@ -5,6 +5,7 @@ import { Download, FileCode, Edit3, Trash2 } from 'lucide-react';
 import type { QrCodeItem } from '../types';
 import { QR_TYPE_CONFIG } from '../constants';
 import { QrSvgRenderer } from './QrSvgRenderer';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { qrCodeService } from '@/src/services/qrcode/qrcode.service';
@@ -16,6 +17,7 @@ interface QrDetailCardProps {
   onDelete: (item: QrCodeItem) => void;
   onToggleActive: (item: QrCodeItem, nextActive: boolean) => void;
   isToggling?: boolean;
+  isLoading?: boolean;
   className?: string;
 }
 
@@ -25,8 +27,47 @@ export function QrDetailCard({
   onDelete,
   onToggleActive,
   isToggling = false,
+  isLoading = false,
   className = '',
 }: QrDetailCardProps) {
+  // Скелетон во время первичной загрузки данных с сервера
+  if (isLoading) {
+    return (
+      <div
+        className={cn(
+          'rounded-2xl bg-[var(--dj-surface)] border border-[var(--dj-border)] p-5 flex flex-col gap-4 min-h-[480px]',
+          className
+        )}
+      >
+        {/* Шапка */}
+        <div className="flex items-center justify-between pb-4 border-b border-[var(--dj-border)]">
+          <Skeleton className="h-3 w-20 rounded" />
+          <Skeleton className="h-6 w-14 rounded-lg" />
+        </div>
+        {/* QR-код */}
+        <div className="flex flex-col items-center gap-3 py-2">
+          <Skeleton className="size-[184px] rounded-xl" />
+          <Skeleton className="h-5 w-28 rounded mt-2" />
+          <Skeleton className="h-3 w-40 rounded" />
+        </div>
+        {/* Кнопки */}
+        <div className="grid grid-cols-2 gap-2.5">
+          <Skeleton className="h-9 rounded-xl" />
+          <Skeleton className="h-9 rounded-xl" />
+        </div>
+        {/* Поля характеристик */}
+        <div className="mt-2 pt-4 border-t border-[var(--dj-border)] flex flex-col gap-3">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="flex items-center justify-between">
+              <Skeleton className="h-3 w-16 rounded" />
+              <Skeleton className="h-3 w-20 rounded" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   if (!item) {
     return (
       <div
@@ -157,11 +198,6 @@ export function QrDetailCard({
             SVG для печати
           </Button>
         </div>
-
-        {/* Подпись макета */}
-        <p className="text-[10px] text-center text-[var(--dj-text-muted)] mt-2.5 leading-relaxed">
-          Макет. В продукте картинку отдаёт сервер (/qrcode/:id/image).
-        </p>
 
         {/* Характеристики стола */}
         <div className="mt-5 pt-4 border-t border-[var(--dj-border)] flex flex-col gap-2.5 text-[13px]">

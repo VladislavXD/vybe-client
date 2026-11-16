@@ -20,11 +20,15 @@ export default async function middleware(request: NextRequest) {
     ? `/${segments.slice(1).join('/')}`
     : pathname;
 
-  // 2. Проверяем наличие HttpOnly сессионной куки (Express-session) или маркера авторизации
+  // 2. Проверяем наличие сессионной куки
+  // В кросс-доменном проде (Vercel + Render) cookie 'session' имеет Domain=onrender.com
+  // и по соображениям безопасности браузера не передается на домен vybe-lime.vercel.app.
+  // Поэтому признаком авторизованной сессии на клиенте является 'trackup_session' или 'trackup_role'
   const sessionCookie =
     request.cookies.get('session')?.value ||
     request.cookies.get('connect.sid')?.value ||
-    request.cookies.get('trackup_session')?.value;
+    request.cookies.get('trackup_session')?.value ||
+    request.cookies.get('trackup_role')?.value;
   const isAuthenticated = Boolean(sessionCookie && sessionCookie.trim() !== '');
 
   // 3. Проверяем выбранную роль пользователя

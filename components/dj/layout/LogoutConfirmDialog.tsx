@@ -28,11 +28,21 @@ export function LogoutConfirmDialog({ open, onOpenChange }: LogoutConfirmDialogP
   const handleConfirmLogout = async () => {
     try {
       await logoutMutation.mutateAsync()
+      if (typeof window !== 'undefined') {
+        document.cookie = 'trackup_session=; path=/; max-age=0; SameSite=Lax'
+        document.cookie = 'trackup_role=; path=/; max-age=0; SameSite=Lax'
+        window.localStorage.removeItem('trackup_selected_role')
+      }
       onOpenChange(false)
       // Полная перезагрузка гарантирует сброс кук, кэша запросов и очистку памяти
       window.location.href = '/ru/auth'
     } catch (error) {
       console.error('Ошибка при выходе из аккаунта:', error)
+      if (typeof window !== 'undefined') {
+        document.cookie = 'trackup_session=; path=/; max-age=0; SameSite=Lax'
+        document.cookie = 'trackup_role=; path=/; max-age=0; SameSite=Lax'
+        window.localStorage.removeItem('trackup_selected_role')
+      }
       // В любом случае очищаем и редиректим на логин
       window.location.href = '/ru/auth'
     }

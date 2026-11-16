@@ -36,6 +36,7 @@ export function useRoleSelection({
             window.localStorage.setItem('trackup_invite_code', inviteCode.trim())
           }
           // Устанавливаем куку для Next.js middleware
+          document.cookie = 'trackup_session=1; path=/; max-age=31536000; SameSite=Lax'
           document.cookie = `trackup_role=${selectedRole}; path=/; max-age=31536000; SameSite=Lax`
         } catch {
           // ignore storage security errors in sandbox/incognito

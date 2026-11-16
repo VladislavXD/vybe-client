@@ -35,7 +35,7 @@ function NewVerificationContent() {
       }
     }
 
-    const destination = '/dashboard'
+    const destination = data.role === 'venue_owner' ? '/dashboard' : '/dashboard'
     setTimeout(() => {
       router.push(destination)
     }, 600)

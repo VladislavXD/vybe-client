@@ -1,68 +1,64 @@
-'use client';
+"use client";
 
-import React, { useMemo, useState } from 'react';
-import { QrHeader } from './header/QrHeader';
-import { QrFilterBar } from './filters/QrFilterBar';
-import { QrTable } from './table/QrTable';
-import { QrDetailCard } from './preview/QrDetailCard';
-import { CreateQrModal } from './modals/CreateQrModal';
-import { BatchCreateQrModal } from './modals/BatchCreateQrModal';
-import { EditQrModal } from './modals/EditQrModal';
-import { DeleteConfirmDialog } from './modals/DeleteConfirmDialog';
-import { INITIAL_MOCK_QRCODES } from './constants';
-import type { QrCodeItem, QrTabCategory } from './types';
-import { cn } from '@/lib/utils';
+import React, { useMemo, useState } from "react";
+import { QrHeader } from "./header/QrHeader";
+import { QrFilterBar } from "./filters/QrFilterBar";
+import { QrTable } from "./table/QrTable";
+import { QrDetailCard } from "./preview/QrDetailCard";
+import { CreateQrModal } from "./modals/CreateQrModal";
+import { BatchCreateQrModal } from "./modals/BatchCreateQrModal";
+import { EditQrModal } from "./modals/EditQrModal";
+import { DeleteConfirmDialog } from "./modals/DeleteConfirmDialog";
+import type { QrCodeItem, QrTabCategory } from "./types";
+import { cn } from "@/lib/utils";
 import {
   useQrCodes,
   useCreateQrCode,
   useBatchCreateQrCodes,
   useUpdateQrCode,
   useDeleteQrCode,
-} from '@/src/hooks/qrcode/useQrCodes';
+} from "@/src/hooks/qrcode/useQrCodes";
 import type {
   CreateQrCodePayload,
   BatchCreateQrCodePayload,
   UpdateQrCodePayload,
-} from '@/src/services/qrcode/qrcode.types';
+} from "@/src/services/qrcode/qrcode.types";
 
 interface QrManagementViewProps {
   initialItems?: QrCodeItem[];
   className?: string;
 }
 
+const EMPTY_ITEMS: QrCodeItem[] = [];
+
 export function QrManagementView({
   initialItems,
-  className = '',
+  className = "",
 }: QrManagementViewProps) {
   // TanStack Query хуки
-  const { data: serverItems, isLoading: isQueryLoading } = useQrCodes();
+  const {
+    data,
+    isLoading: isQueryLoading,
+    isError,
+    error,
+    refetch,
+  } = useQrCodes();
   const createMutation = useCreateQrCode();
   const batchCreateMutation = useBatchCreateQrCodes();
   const updateMutation = useUpdateQrCode();
   const deleteMutation = useDeleteQrCode();
 
-  // Локальный стейт (fallback на мок-данные при отсутствии записей на сервере)
-  const [localItems, setLocalItems] = useState<QrCodeItem[]>(() => {
-    return initialItems || INITIAL_MOCK_QRCODES;
-  });
 
   // Элементы данных: если с сервера пришли данные и они не пусты, берем их, иначе локальные
-  const allItems = useMemo(() => {
-    if (serverItems && serverItems.length > 0) {
-      return serverItems;
-    }
-    return localItems;
-  }, [serverItems, localItems]);
+  const allItems = data ?? EMPTY_ITEMS
 
   // Фильтры и поиск
-  const [category, setCategory] = useState<QrTabCategory>('all');
-  const [search, setSearch] = useState('');
+  const [category, setCategory] = useState<QrTabCategory>("all");
+  const [search, setSearch] = useState("");
   const [onlyActive, setOnlyActive] = useState(false);
 
   // Выбранный для предпросмотра стол
-  const [selectedId, setSelectedId] = useState<string | null>(() => {
-    return allItems[0]?.id || null;
-  });
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   // Модальные окна
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -72,9 +68,9 @@ export function QrManagementView({
 
   // Подсчет счетчиков для фильтра
   const counts = useMemo(() => {
-    const music = allItems.filter((i) => i.type === 'MUSIC').length;
-    const food = allItems.filter((i) => i.type === 'FOOD').length;
-    const reviews = allItems.filter((i) => i.type === 'REVIEWS').length;
+    const music = allItems.filter((i) => i.type === "MUSIC").length;
+    const food = allItems.filter((i) => i.type === "FOOD").length;
+    const reviews = allItems.filter((i) => i.type === "REVIEWS").length;
     return {
       all: allItems.length,
       music,
@@ -87,9 +83,9 @@ export function QrManagementView({
   const filteredItems = useMemo(() => {
     return allItems.filter((item) => {
       // 1. Категория
-      if (category === 'music' && item.type !== 'MUSIC') return false;
-      if (category === 'food' && item.type !== 'FOOD') return false;
-      if (category === 'reviews' && item.type !== 'REVIEWS') return false;
+      if (category === "music" && item.type !== "MUSIC") return false;
+      if (category === "food" && item.type !== "FOOD") return false;
+      if (category === "reviews" && item.type !== "REVIEWS") return false;
 
       // 2. Только активные
       if (onlyActive && !item.isActive) return false;
@@ -99,8 +95,8 @@ export function QrManagementView({
         const q = search.trim().toLowerCase();
         const matchesLabel = item.tableLabel.toLowerCase().includes(q);
         const matchesCode = item.code.toLowerCase().includes(q);
-        const matchesSource = (item.source || '').toLowerCase().includes(q);
-        const matchesZone = (item.zoneId || '').toLowerCase().includes(q);
+        const matchesSource = (item.source || "").toLowerCase().includes(q);
+        const matchesZone = (item.zoneId || "").toLowerCase().includes(q);
         if (!matchesLabel && !matchesCode && !matchesSource && !matchesZone) {
           return false;
         }
@@ -122,159 +118,78 @@ export function QrManagementView({
   // ─── Обработчики CRUD ────────────────────────────────────────────────────────
 
   const handleCreate = async (payload: CreateQrCodePayload) => {
-    try {
-      const created = await createMutation.mutateAsync(payload);
-      setSelectedId(created.id);
-    } catch {
-      // Fallback: создаем локально
-      const itemType = payload.type || 'MUSIC';
-      const newItem: QrCodeItem = {
-        id: `qr-${Date.now()}`,
-        code: payload.customCode || Math.random().toString(36).substring(2, 10),
-        tableLabel: payload.tableLabel,
-        tableNumber: null,
-        type: itemType,
-        serviceType: itemType === 'FOOD' ? 'food' : itemType === 'REVIEWS' ? 'review' : 'music',
-        zoneId: payload.zoneId || 'Основной зал',
-        source: payload.source || 'table_tent',
-        venueId: 'v-1',
-        isActive: true,
-        scanCount: 0,
-        lastScannedAt: null,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        scanUrl: `https://app.trackup.uz/q/${payload.customCode || Math.random().toString(36).substring(2, 10)}`,
-        _count: { orders: 0 },
-      };
-      setLocalItems((prev) => [newItem, ...prev]);
-      setSelectedId(newItem.id);
-    }
-  };
+  const created = await createMutation.mutateAsync(payload);
+  setSelectedId(created.id);
+};
+
 
   const handleBatchCreate = async (payload: BatchCreateQrCodePayload) => {
-    try {
-      await batchCreateMutation.mutateAsync(payload);
-    } catch {
-      // Fallback локально
-      const newBatch: QrCodeItem[] = [];
-      const prefix = payload.tablePrefix || 'Стол ';
-      const type = payload.type || 'MUSIC';
-      const serviceType = type === 'FOOD' ? 'food' : type === 'REVIEWS' ? 'review' : 'music';
+  await batchCreateMutation.mutateAsync(payload);
+};
 
-      for (let i = payload.startTable; i <= payload.endTable; i++) {
-        const code = Math.random().toString(36).substring(2, 10);
-        newBatch.push({
-          id: `qr-${Date.now()}-${i}`,
-          code,
-          tableLabel: `${prefix}${i}`,
-          tableNumber: i,
-          type,
-          serviceType,
-          zoneId: payload.zoneId || 'Основной зал',
-          source: payload.source || 'table_tent',
-          venueId: 'v-1',
-          isActive: true,
-          scanCount: 0,
-          lastScannedAt: null,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          scanUrl: `https://app.trackup.uz/q/${code}`,
-          _count: { orders: 0 },
-        });
-      }
-      setLocalItems((prev) => [...newBatch, ...prev]);
-      if (newBatch[0]) setSelectedId(newBatch[0].id);
-    }
-  };
+const handleUpdate = async (id: string, payload: UpdateQrCodePayload) => {
+  await updateMutation.mutateAsync({ id, payload });
+};
 
-  const handleUpdate = async (id: string, payload: UpdateQrCodePayload) => {
-    try {
-      await updateMutation.mutateAsync({ id, payload });
-    } catch {
-      // Fallback локально
-      setLocalItems((prev) =>
-        prev.map((item) => {
-          if (item.id === id) {
-            return {
-              ...item,
-              ...(payload.tableLabel && { tableLabel: payload.tableLabel }),
-              ...(payload.type && { type: payload.type }),
-              ...(payload.zoneId && { zoneId: payload.zoneId }),
-              ...(payload.source && { source: payload.source }),
-              ...(payload.isActive !== undefined && { isActive: payload.isActive }),
-            };
-          }
-          return item;
-        })
-      );
-    }
-  };
-
-  const handleToggleActive = async (item: QrCodeItem, nextActive: boolean) => {
-    await handleUpdate(item.id, { isActive: nextActive });
-  };
-
-  const handleDelete = async (item: QrCodeItem) => {
-    try {
-      await deleteMutation.mutateAsync(item.id);
-    } catch {
-      // Fallback локально
-      setLocalItems((prev) => prev.filter((i) => i.id !== item.id));
-    }
-    setDeletingItem(null);
-  };
+const handleToggleActive = async (item: QrCodeItem, nextActive: boolean) => {
+  await handleUpdate(item.id, { isActive: nextActive });
+};
+const handleDelete = async (item: QrCodeItem) => {
+  await deleteMutation.mutateAsync(item.id);
+  setDeletingItem(null);
+};
 
   const activeCount = useMemo(() => {
     return allItems.filter((i) => i.isActive).length;
   }, [allItems]);
 
   return (
-    <div className={cn('w-full flex flex-col', className)}>
+    <div className={cn("w-full flex flex-col", className)}>
       <div className="w-full mx-auto flex flex-col">
-          {/* Верхняя шапка */}
-          <QrHeader
-            totalCount={allItems.length}
-            activeCount={activeCount}
-            onOpenCreate={() => setIsCreateOpen(true)}
-            onOpenBatch={() => setIsBatchOpen(true)}
-          />
+        {/* Верхняя шапка */}
+        <QrHeader
+          totalCount={allItems.length}
+          activeCount={activeCount}
+          onOpenCreate={() => setIsCreateOpen(true)}
+          onOpenBatch={() => setIsBatchOpen(true)}
+        />
 
-          {/* Панель фильтров и поиска */}
-          <QrFilterBar
-            category={category}
-            onSelectCategory={setCategory}
-            search={search}
-            onSearchChange={setSearch}
-            onlyActive={onlyActive}
-            onToggleOnlyActive={() => setOnlyActive((prev) => !prev)}
-            counts={counts}
-          />
+        {/* Панель фильтров и поиска */}
+        <QrFilterBar
+          category={category}
+          onSelectCategory={setCategory}
+          search={search}
+          onSearchChange={setSearch}
+          onlyActive={onlyActive}
+          onToggleOnlyActive={() => setOnlyActive((prev) => !prev)}
+          counts={counts}
+        />
 
-          {/* Двухколоночный макет: таблица столов слева + предпросмотр справа */}
-          <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 items-start mt-2">
-            {/* Левая колонка: Таблица */}
-            <div className="xl:col-span-8 w-full min-w-0">
-              <QrTable
-                items={filteredItems}
-                selectedId={selectedItem?.id || null}
-                onSelectItem={(item) => setSelectedId(item.id)}
-                isLoading={isQueryLoading}
-              />
-            </div>
+        {/* Двухколоночный макет: таблица столов слева + предпросмотр справа */}
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 items-start mt-2">
+          {/* Левая колонка: Таблица */}
+          <div className="xl:col-span-8 w-full min-w-0">
+            <QrTable
+              items={filteredItems}
+              selectedId={selectedItem?.id || null}
+              onSelectItem={(item) => setSelectedId(item.id)}
+              isLoading={isQueryLoading}
+            />
+          </div>
 
-            {/* Правая колонка: Карточка детального предпросмотра */}
-            <div className="xl:col-span-4 w-full sticky top-6">
-              <QrDetailCard
-                item={selectedItem}
-                onEdit={(item) => setEditingItem(item)}
-                onDelete={(item) => setDeletingItem(item)}
-                onToggleActive={handleToggleActive}
-                isToggling={updateMutation.isPending}
-              />
-            </div>
+          {/* Правая колонка: Карточка детального предпросмотра */}
+          <div className="xl:col-span-4 w-full sticky top-6">
+            <QrDetailCard
+              item={selectedItem}
+              onEdit={(item) => setEditingItem(item)}
+              onDelete={(item) => setDeletingItem(item)}
+              onToggleActive={handleToggleActive}
+              isToggling={updateMutation.isPending}
+              isLoading={isQueryLoading}
+            />
           </div>
         </div>
-
+      </div>
 
       {/* Модальное oho: Hban QR */}
       <CreateQrModal
