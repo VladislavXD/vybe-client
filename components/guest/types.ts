@@ -49,11 +49,14 @@ export interface VenueServiceItem {
 
 export interface TrackItem {
   id?: string
+  externalId?: string
   title: string
   artist: string
   duration: string
   coverColor?: string
   coverGradient?: string
+  coverUrl?: string
+  previewUrl?: string
 }
 
 export interface MenuItem {
