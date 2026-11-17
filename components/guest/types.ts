@@ -10,6 +10,7 @@ export type GuestScreenState =
   | 'menu'
   | 'review-initial'
   | 'review'
+  | 'disabled'
 
 export type GuestOrderType = 'music' | 'food' | 'review'
 

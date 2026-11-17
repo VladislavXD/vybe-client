@@ -13,6 +13,7 @@ import {
   GuestCheckoutScreen,
   GuestSuccessScreen,
   GuestFailureScreen,
+  GuestDisabledScreen,
   GuestTabBar,
   type GuestTabKey,
   type GuestScreenState,
@@ -29,9 +30,16 @@ type ViewportMode = 'mobile' | 'tablet' | 'fluid'
 function GuestOrderContent() {
   const searchParams = useSearchParams()
   const qrType = searchParams?.get('type')?.toLowerCase()
+  const qrStatus = searchParams?.get('status')?.toLowerCase()
+  const venueParam = searchParams?.get('venue') || 'Neon Harbor Club & Bar'
+  const tableParam = searchParams?.get('table') || 'Стол 5'
+  const codeParam = searchParams?.get('code') || undefined
 
-  // Определение начального экрана по QR / NFC типу
+  // Определение начального экрана по QR / NFC типу и статусу активности
   const getInitialScreenFromQr = (): GuestScreenState => {
+    if (qrStatus === 'disabled' || qrStatus === 'inactive') {
+      return 'disabled'
+    }
     if (qrType === 'food' || qrType === 'menu') {
       return 'food-initial'
     }
@@ -91,16 +99,18 @@ function GuestOrderContent() {
     tipAmount: 15000,
   })
 
-  // Реакция на изменение query-параметра ?type=
+  // Реакция на изменение query-параметров ?type= и ?status=
   useEffect(() => {
-    if (qrType === 'food' || qrType === 'menu') {
+    if (qrStatus === 'disabled' || qrStatus === 'inactive') {
+      setActiveScreen('disabled')
+    } else if (qrType === 'food' || qrType === 'menu') {
       setActiveScreen('food-initial')
     } else if (qrType === 'review' || qrType === 'feedback') {
       setActiveScreen('review-initial')
     } else if (qrType === 'music' || qrType === 'dj') {
       setActiveScreen('initial')
     }
-  }, [qrType])
+  }, [qrType, qrStatus])
 
   // Динамические размеры фрейма для проверки адаптивности на десктопе
   const getContainerWidthClass = () => {
@@ -245,6 +255,16 @@ function GuestOrderContent() {
       >
         {/* Рабочая область экрана */}
         <div className="flex-1 min-h-0 relative flex flex-col overflow-hidden">
+          {/* 0. Экран выключенного QR-кода */}
+          {activeScreen === 'disabled' && (
+            <GuestDisabledScreen
+              venueName={venueParam}
+              tableLabel={tableParam}
+              code={codeParam}
+              onRefresh={() => window.location.reload()}
+            />
+          )}
+
           {/* 1. Главная страница музыки (Грамофон) */}
           {activeScreen === 'initial' && (
             <GuestInitialScreen
@@ -357,13 +377,15 @@ function GuestOrderContent() {
           )}
         </div>
 
-        {/* Навигационный таб-бар гостя внизу фрейма: DJ Музыка, Меню, Отзывы */}
-        <div className="shrink-0 p-2.5 sm:p-3 pt-1 bg-[#0C0B0F]/95 backdrop-blur-md border-t border-white/[0.06] z-30">
-          <GuestTabBar
-            activeTab={getActiveTabKey()}
-            onTabChange={handleTabChange}
-          />
-        </div>
+        {/* Навигационный таб-бар гостя внизу фрейма: скрываем если QR выключен */}
+        {activeScreen !== 'disabled' && (
+          <div className="shrink-0 p-2.5 sm:p-3 pt-1 bg-[#0C0B0F]/95 backdrop-blur-md border-t border-white/[0.06] z-30">
+            <GuestTabBar
+              activeTab={getActiveTabKey()}
+              onTabChange={handleTabChange}
+            />
+          </div>
+        )}
       </div>
     </div>
   )
